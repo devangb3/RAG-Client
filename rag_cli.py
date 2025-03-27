@@ -6,24 +6,18 @@ import google.generativeai as genai
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
-#from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-# --- Configuration and Setup ---
 
-# Suppress specific warnings if needed (optional)
 warnings.filterwarnings("ignore", category=UserWarning, message=".*Could not import google-auth.*")
 
-# Load API key from .env file
 load_dotenv()
 api_key = os.getenv("GOOGLE_API_KEY")
 
 if not api_key:
     raise ValueError("GOOGLE_API_KEY not found in .env file or environment variables.")
 
-# Configure the Gemini API client
 genai.configure(api_key=api_key)
 
-# --- Core RAG Functions ---
 
 def load_and_split_document(filepath):
     """Loads a text document and splits it into chunks."""
@@ -35,10 +29,9 @@ def load_and_split_document(filepath):
             print("Error: No document content loaded.")
             return None
 
-        # Using RecursiveCharacterTextSplitter for better chunking
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000, # Max characters per chunk
-            chunk_overlap=150, # Overlap between chunks
+            chunk_size=1000,
+            chunk_overlap=150,
             length_function=len,
         )
         chunks = text_splitter.split_documents(documents)
@@ -59,21 +52,16 @@ def create_vector_store(chunks):
     try:
         print("Creating embeddings and vector store...")
 
-        # --- MODIFIED PART ---
-        # Use GoogleGenerativeAIEmbeddings instead of GooglePalmEmbeddings
         embeddings = GoogleGenerativeAIEmbeddings(
             model="models/embedding-001", # Specify the embedding model
             google_api_key=api_key
         )
-        # --- END OF MODIFIED PART ---
 
-        # Create FAISS vector store from document chunks
         print("Embedding documents...")
         vector_store = FAISS.from_documents(chunks, embeddings)
         print("Vector store created successfully.")
         return vector_store
     except Exception as e:
-        # Catching potential API errors during embedding
         print(f"Error creating vector store or embeddings: {e}")
         if "API key not valid" in str(e):
              print("Please check if your GOOGLE_API_KEY is correct and has permissions for the embedding model.")
@@ -114,7 +102,6 @@ def generate_answer(query, context_chunks):
     else:
         context_text = "\n\n".join([chunk.page_content for chunk in context_chunks])
 
-    # Prepare the prompt for Gemini
     prompt = f"""Based on the following context, please answer the question. If the context doesn't contain the answer, say you don't know based on the provided text.
 
 Context:
@@ -126,11 +113,9 @@ Answer:"""
 
     print("Generating answer using Gemini...")
     try:
-        # Use the Gemini model for generation
-        model = genai.GenerativeModel('gemini-1.5-flash-latest') # Or 'gemini-pro'
+        model = genai.GenerativeModel('gemini-1.5-flash-latest')
         response = model.generate_content(prompt)
 
-        # Handle potential safety blocks or empty responses
         if not response.parts:
              if response.prompt_feedback.block_reason:
                   print(f"Warning: Response blocked due to {response.prompt_feedback.block_reason}")
@@ -143,7 +128,6 @@ Answer:"""
 
     except Exception as e:
         print(f"Error generating answer with Gemini: {e}")
-        # Provide more specific feedback if possible
         if "API key not valid" in str(e):
              return "Error: Invalid API Key for generation model."
         elif "resource has been exhausted" in str(e):
@@ -153,28 +137,22 @@ Answer:"""
         return f"An error occurred during generation: {e}"
 
 
-# --- Main Execution Logic ---
 
 def main():
-    # Set up argument parser for command-line input
     parser = argparse.ArgumentParser(description="RAG CLI tool using Gemini API")
     parser.add_argument("filepath", help="Path to the text document to process.")
     args = parser.parse_args()
 
-    # 1. Load and Split Document
     doc_chunks = load_and_split_document(args.filepath)
     if not doc_chunks:
-        return # Exit if document loading failed
-
-    # 2. Create Vector Store
+        return
     vector_store = create_vector_store(doc_chunks)
     if not vector_store:
-        return # Exit if vector store creation failed
+        return
 
     print("\n--- RAG CLI Ready ---")
     print("Ask questions about the document. Type 'quit' or 'exit' to stop.")
 
-    # 3. Q&A Loop
     while True:
         try:
             query = input("\nYour Question: ")
@@ -183,22 +161,18 @@ def main():
             if not query:
                 continue
 
-            # 4. Retrieve Context
             context = retrieve_context(query, vector_store)
 
-            # 5. Generate Answer
             answer = generate_answer(query, context)
             print(f"\nAnswer:\n{answer}")
 
-        except EOFError: # Handle Ctrl+D or end of input stream
+        except EOFError:
              break
-        except KeyboardInterrupt: # Handle Ctrl+C
+        except KeyboardInterrupt:
              print("\nExiting...")
              break
         except Exception as e:
              print(f"\nAn unexpected error occurred: {e}")
-             # Optionally decide whether to continue or break the loop
-             # break
 
 
 if __name__ == "__main__":
