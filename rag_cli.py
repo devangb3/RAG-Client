@@ -3,7 +3,7 @@ import argparse
 import warnings
 from dotenv import load_dotenv
 import google.generativeai as genai
-from langchain_community.document_loaders import TextLoader
+from langchain_community.document_loaders import TextLoader, PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
@@ -22,27 +22,47 @@ genai.configure(api_key=api_key)
 def load_and_split_document(filepath):
     """Loads a text document and splits it into chunks."""
     print(f"Loading document from: {filepath}")
+    file_extension = os.path.splitext(filepath)[1].lower()
+
     try:
-        loader = TextLoader(filepath, encoding='utf-8')
-        documents = loader.load()
-        if not documents:
-            print("Error: No document content loaded.")
+        if file_extension == ".txt":
+            loader = TextLoader(filepath, encoding='utf-8')
+            print("Using TextLoader for .txt file.")
+        elif file_extension == ".pdf":
+            loader = PyPDFLoader(filepath)
+            print("Using PyPDFLoader for .pdf file. Images will be ignored.")
+        else:
+            print(f"Error: Unsupported file type '{file_extension}'. Only .txt and .pdf are supported.")
             return None
 
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=150,
-            length_function=len,
-        )
-        chunks = text_splitter.split_documents(documents)
-        print(f"Split document into {len(chunks)} chunks.")
-        return chunks
+        documents = loader.load()
+        if not documents:
+            print("Error: No document content loaded. The file might be empty, corrupted, or password-protected (for PDFs).")
+            return None
+        print(f"Successfully loaded {len(documents)} initial document pages/sections.")
+
     except FileNotFoundError:
         print(f"Error: File not found at {filepath}")
         return None
     except Exception as e:
-        print(f"Error loading or splitting document: {e}")
+        print(f"Error loading document: {e}")
+        if "password" in str(e).lower():
+             print("Hint: The PDF might be password-protected.")
         return None
+
+    print("Splitting document into smaller chunks...")
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=150,
+        length_function=len,
+    )
+    chunks = text_splitter.split_documents(documents)
+    if not chunks:
+         print("Warning: Document splitting resulted in zero chunks. Check document content and splitter settings.")
+         return None # Or handle as appropriate
+
+    print(f"Split document into {len(chunks)} chunks.")
+    return chunks
 
 def create_vector_store(chunks):
     """Creates embeddings and a FAISS vector store using GoogleGenerativeAIEmbeddings."""
@@ -102,16 +122,15 @@ def generate_answer(query, context_chunks):
     else:
         context_text = "\n\n".join([chunk.page_content for chunk in context_chunks])
 
-    prompt = f"""Based on the following context, please answer the question. If the context doesn't contain the answer, say you don't know based on the provided text.
+    prompt = f"""Based *only* on the following context extracted from the document, please answer the question. If the context doesn't contain the answer,
+    state that the information is not available in the provided text. Do not use any prior knowledge.
+    Context:
+    {context_text}
 
-Context:
-{context_text}
+    Question: {query}
 
-Question: {query}
+    Answer:"""
 
-Answer:"""
-
-    print("Generating answer using Gemini...")
     try:
         model = genai.GenerativeModel('gemini-1.5-flash-latest')
         response = model.generate_content(prompt)
