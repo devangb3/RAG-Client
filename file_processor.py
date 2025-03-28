@@ -2,6 +2,26 @@ import os
 from langchain_community.document_loaders import TextLoader, PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+def process_directory(directory_path):
+    """Process all supported files in a directory and its subdirectories."""
+    if not os.path.exists(directory_path):
+        print(f"Error: Directory not found at {directory_path}")
+        return None
+
+    all_chunks = []
+    supported_extensions = {'.txt', '.pdf'}
+    
+    for root, _, files in os.walk(directory_path):
+        for file in files:
+            if os.path.splitext(file)[1].lower() in supported_extensions:
+                filepath = os.path.join(root, file)
+                chunks = load_and_split_document(filepath)
+                if chunks:
+                    all_chunks.extend(chunks)
+    
+    print(f"Processed all files in directory. Total chunks: {len(all_chunks)}")
+    return all_chunks
+
 def load_and_split_document(filepath):
     """Loads a text document and splits it into chunks."""
 
