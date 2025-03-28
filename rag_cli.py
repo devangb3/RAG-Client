@@ -132,7 +132,7 @@ def generate_answer(query, context_chunks):
     Answer:"""
 
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        model = genai.GenerativeModel('gemini-2.5-pro-exp-03-25')
         response = model.generate_content(prompt)
 
         if not response.parts:
@@ -152,7 +152,7 @@ def generate_answer(query, context_chunks):
         elif "resource has been exhausted" in str(e):
              return "Error: API rate limit exceeded for generation."
         elif "Model not found" in str(e):
-             return f"Error: Generation model specified ('gemini-1.5-flash-latest' or 'gemini-pro') not found or unavailable."
+             return f"Error: Generation model specified ('gemini-2.5-pro-exp-03-25' or 'gemini-pro') not found or unavailable."
         return f"An error occurred during generation: {e}"
 
 
