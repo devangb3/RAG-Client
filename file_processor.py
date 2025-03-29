@@ -35,7 +35,6 @@ def process_directory(directory_path):
         print(f"-> Loaded {len(docs_txt)} .txt documents.")
     except Exception as e:
         print(f"Warning: Error loading .txt files: {e}")
-        # Continue processing other types even if one fails
 
     try:
         print("Loading .pdf files...")

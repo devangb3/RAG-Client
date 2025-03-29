@@ -1,11 +1,11 @@
 # RAG CLI Tool
 
-A command-line interface tool that implements Retrieval-Augmented Generation (RAG) using Google's Gemini API. This tool allows you to ask questions about the content of text and PDF documents.
+A command-line interface tool that implements Retrieval-Augmented Generation (RAG) using Google's Gemini API. This tool allows you to ask questions about the content of text, PDF documents and Python Codebases.
 
 ## Features
 
 - Process single documents or entire directories
-- Supports both `.txt` and `.pdf` files
+- Supports both `.txt`, `.pdf`, `.py` files
 - Uses Google's Gemini API for text generation
 - Implements RAG pattern using FAISS vector store
 - Interactive Q&A interface
@@ -49,7 +49,7 @@ python rag_cli.py path/to/your/directory
 ### Interactive Mode
 
 After processing the document(s), you can:
-- Type your questions about the document content
+- Type your questions about the document content or codebase
 - Get AI-generated answers based on the document context
 - Type 'quit' or 'exit' to end the session
 
@@ -78,7 +78,6 @@ The tool includes comprehensive error handling for:
 
 ## Limitations
 
-- Only supports .txt and .pdf files
 - PDF processing ignores images
 - Requires active internet connection
 - Subject to Google API rate limits
