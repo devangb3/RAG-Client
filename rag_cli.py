@@ -41,8 +41,10 @@ def main():
                 break
             if not query:
                 continue
-
-            answer = process_query(query, vector_store)
+            relevant_chunks = input("\nNumber of relevant chunks to retireve from vector store : ")
+            if not relevant_chunks:
+                relevant_chunks = 5
+            answer = process_query(query, vector_store, int(relevant_chunks))
             print(f"\nAnswer:\n{answer}")
 
         except EOFError:

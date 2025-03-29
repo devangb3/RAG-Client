@@ -7,7 +7,7 @@ api_key = os.getenv("GOOGLE_API_KEY")
 
 genai.configure(api_key=api_key)
 
-def retrieve_context(query, vector_store, k=10):
+def retrieve_context(query, vector_store, k):
     """Retrieves relevant context chunks from the vector store."""
     if vector_store is None:
         print("Vector store is not available for retrieval.")
@@ -63,8 +63,8 @@ def generate_answer(query, context_chunks):
              return f"Error: Generation model specified ('gemini-2.5-pro-exp-03-25' or 'gemini-pro') not found or unavailable."
         return f"An error occurred during generation: {e}"
 
-def process_query(query, vector_store):
-    context = retrieve_context(query, vector_store)
+def process_query(query, vector_store, relevant_chunks):
+    context = retrieve_context(query, vector_store, relevant_chunks)
     answer = generate_answer(query, context)
 
     return answer
