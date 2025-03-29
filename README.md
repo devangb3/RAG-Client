@@ -5,11 +5,11 @@ A command-line interface tool that implements Retrieval-Augmented Generation (RA
 ## Features
 
 - Process single documents or entire directories
-- Supports both `.txt`, `.pdf`, `.py` files
+- Supports `.txt`, `.pdf`, `.py` files
 - Uses Google's Gemini API for text generation
 - Implements RAG pattern using FAISS vector store
 - Interactive Q&A interface
-
+- Ability to mention number of relevant chunks to extract depending upon the specifity of answer required (directly proportional)
 ## Prerequisites
 
 - Python 3.8 or higher
